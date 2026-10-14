@@ -1,37 +1,37 @@
 # What I built
 
-Daily Scramble is a word game. You unscramble 5 words, earn coins, and try to beat other players on the daily leaderboard.
+Daily Scramble is a word game. You get 5 scrambled words, unscramble them as fast as you can, and earn coins for it.
 
-There are two modes. The **Daily Challenge** gives everyone the same 5 words — you get one attempt, and your score goes on the leaderboard. **Practice** mode gives you random words and lets you play as many times as you want.
+There are two modes. The Daily Challenge gives every player the same 5 words for that day. You get one shot at it, and your score goes on the leaderboard so you can see how you did compared to everyone else. Practice mode gives you random words and lets you play as many times as you want.
 
-## Why a word scramble
+# Why a word scramble
 
-I wanted something that takes under two minutes, works on any phone, and doesn't need images or heavy assets. A word scramble hits all three. The words are common English (4-6 letters), picked to be accessible for people reading English as a second language.
+I wanted something that takes under two minutes, works on any phone, and does not need images or heavy downloads. A word scramble fits all three. The words are common English, 4 to 6 letters, chosen to be easy for people who read English as a second language. The entire app is about 72KB.
 
-## Choices I made
+# Choices I made
 
-**Two modes instead of one.** I started with only a daily puzzle, but that means users open the app once, play, and leave. Adding practice mode gives people a reason to stay longer and keep earning.
+I started with just a daily puzzle but quickly realized that means people open the app once, play, and leave. Adding a practice mode gives them a reason to stay and keep earning. Both modes feed into the same coin balance, streaks, badges, and levels.
 
-**Server-side scoring.** The client sends guesses, not scores. The server validates each guess against the actual answer and computes points. This prevents anyone from faking a score through the browser console.
+Scoring happens on the server. The client sends your guesses, not your score. The server checks each guess against the real answer and calculates the points. This means no one can fake a high score through the browser console.
 
-**Streak multipliers.** Streaks on their own feel like a vanity metric. Tying them to a coin multiplier (1.5x at 3 days, 2x at 7, up to 3x at 30) makes them worth something. If the platform pays real money, this is the lever.
+Streaks on their own feel like a counter that goes up. I tied them to a coin multiplier so they actually mean something. Play 3 days in a row and you earn 1.5x coins. A week gets you 2x. A month gets you 3x. If the platform eventually pays real money, this is where it matters.
 
-**Single deploy.** FastAPI serves the React build as static files. One process, one URL, no CORS. Simpler to deploy, simpler to reason about.
+I framed everything as coins instead of points. Same number, but "you earned 435 coins" feels more concrete than "you scored 435 points," especially when users will eventually trade them for something real.
 
-**Coins, not points.** Same number, different framing. "You earned 435 coins" feels more tangible than "You scored 435 points," especially for users who will eventually exchange them for something real.
+There are 10 badges that give new players short-term goals. Things like finishing a puzzle in under 30 seconds, or hitting a 7-day streak. They are achievable enough to keep people motivated in the first few weeks.
 
-**Badges as goals.** 10 badges give new players something to aim at beyond the daily score. Things like "Speed Demon" (finish under 30 seconds) or "Week Warrior" (7-day streak) are achievable enough to feel motivating.
+For deployment, I kept it to a single process. FastAPI serves the React build as static files. One URL, no separate frontend deploy, no CORS configuration. Simpler to run, simpler to debug.
 
-## What I left out
+# What I left out
 
-**User accounts with login.** Right now, identity is a UUID in localStorage. If someone clears their browser, they lose their history. For a real product, I'd add phone number or Google sign-in — but for a build task, anonymous auth keeps the friction at zero.
+Right now, identity is just a UUID stored in the browser. If someone clears their data, they lose their history. A real version would need phone number or Google sign-in, but for this task, zero-friction onboarding felt more important than persistence.
 
-**Difficulty scaling.** All words are roughly the same difficulty. A real version could grade words by frequency and ramp up as users level up.
+All words are roughly the same difficulty. A better version would grade words by how common they are and make puzzles harder as people level up.
 
-**Sounds and animations.** A small success sound on correct answers and a shake animation on wrong ones would make the app feel much better. I skipped them to keep scope tight.
+Sound and animation would make the app feel a lot better. A small chime on a correct answer, a shake on a wrong one. I skipped them to keep scope tight.
 
-**Offline support.** A service worker could cache the daily puzzle and queue score submissions. Important for users on spotty mobile data, but out of scope here.
+Offline support through a service worker would let people play on spotty connections and sync scores when they are back online. Important for the target audience, but out of scope here.
 
-## AI tools
+# AI tools
 
-I used Claude Code (Anthropic) throughout. It handled scaffolding, component writing, route generation, and iterating on the game logic. I made the design decisions — what to build, how the reward system works, the two-mode structure, server-side scoring — and reviewed all the code it produced.
+I used Claude Code by Anthropic throughout the build. It handled scaffolding, writing React components, generating FastAPI routes, and iterating on the game logic. I made the design decisions -- what to build, how rewards work, the two-mode structure, server-side scoring -- and reviewed everything it wrote.

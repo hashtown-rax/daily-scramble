@@ -2,79 +2,80 @@ Ref: KL-7Q4
 
 # Daily Scramble
 
-A daily word game. Unscramble 5 words, earn coins, build your streak, climb the leaderboard.
+A word game where you unscramble 5 words, earn coins, and compete on a daily leaderboard.
 
 ## Stack
 
-- **Frontend**: React + Vite + Tailwind CSS
-- **Backend**: FastAPI + SQLAlchemy (async)
-- **Database**: PostgreSQL
+Frontend is React with Vite and Tailwind CSS. Backend is FastAPI with SQLAlchemy (async). Database is PostgreSQL.
 
 ## Setup
 
-### Prerequisites
+You need Python 3.11+, Node.js 18+, and a PostgreSQL database. A free Supabase or Render Postgres instance works fine.
 
-- Python 3.11+
-- Node.js 18+
-- PostgreSQL (local or hosted — Supabase free tier works)
+### Backend
 
-### Local development
-
-```bash
-# Backend
+```
 cd backend
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env   # edit with your database URL
-uvicorn app.main:app --reload --port 8001
+cp .env.example .env
+```
 
-# Frontend (separate terminal)
+Edit the .env file with your database connection string, then start the server:
+
+```
+uvicorn app.main:app --reload --port 8001
+```
+
+### Frontend
+
+In a separate terminal:
+
+```
 cd frontend
 npm install
 npm run dev
 ```
 
-Frontend runs on `http://localhost:5173` and proxies API calls to the backend.
+The frontend runs on http://localhost:5173 and proxies API calls to the backend.
 
 ### Production build
 
-```bash
+```
 ./build.sh
 ```
 
-Builds the React app and copies it into `backend/static/`. FastAPI serves everything from a single process.
+This builds the React app and copies it into backend/static/. FastAPI serves everything from a single process.
 
 ### Environment variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql+asyncpg://user:pass@host:5432/daily_scramble` |
+DATABASE_URL -- PostgreSQL connection string using asyncpg, like postgresql+asyncpg://user:pass@host:5432/daily_scramble
 
 ## How it works
 
-The app has two modes:
+There are two modes.
 
-**Daily Challenge** — The server picks 5 words using the date as a seed. Everyone gets the same puzzle. One attempt per day. Scores go on the leaderboard.
+Daily Challenge gives everyone the same 5 words. You get one attempt per day. Your score goes on the leaderboard.
 
-**Practice** — Random words each time. Play as many times as you want. Earn coins, no leaderboard.
+Practice gives you random words each time. You can play as many rounds as you want and keep earning coins.
 
-Players get 2 attempts per word. Points: 100 for first try, 50 for second, 0 if missed. A time bonus (up to 300 points) rewards speed. Max base score is 800.
+You get 2 attempts per word. First try is worth 100 points, second try is 50, and a miss is 0. There is a time bonus of up to 300 points for finishing quickly. Max base score per game is 800.
 
-Streak multipliers reward consistency: 3 days = 1.5x, 7 days = 2x, 14 days = 2.5x, 30 days = 3x.
+Streak multipliers kick in when you play on consecutive days. 3 days gets you 1.5x, 7 days is 2x, 14 days is 2.5x, and 30 days is 3x.
 
-Scoring is validated server-side — the client sends guesses and the server computes the final score.
+The server validates all scoring. The client sends your guesses and the server computes the final score, so scores cannot be faked from the browser.
 
 ## Deploying to Render
 
-1. Create a PostgreSQL database on Render
-2. Create a **Web Service** pointing to this repo
-   - **Build command**: `./build.sh`
-   - **Start command**: `cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-   - **Environment variable**: `DATABASE_URL` = your connection string (use `postgresql+asyncpg://...`)
+Create a PostgreSQL database on Render. Then create a Web Service pointing to this repo.
 
-Single deploy — FastAPI serves the API and the React frontend from one process.
+Build command: ./build.sh
+Start command: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+Environment variable: DATABASE_URL set to your connection string, with postgresql+asyncpg:// as the prefix.
 
-## AI tools used
+One deploy, one process. FastAPI serves both the API and the frontend.
 
-Built with Claude Code (Anthropic). Used for scaffolding, component writing, and backend route generation. All design decisions, architecture, and review were done manually.
+## AI tools
+
+Built with Claude Code by Anthropic. I used it for scaffolding, writing components, and generating backend routes. Design decisions, architecture, the reward system, and code review were all done by me.
