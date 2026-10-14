@@ -20,14 +20,15 @@ export default function Leaderboard() {
     return (
       <div className="text-center mt-12 px-4">
         <h2 className="text-xl font-bold mb-2">Leaderboard</h2>
-        <p className="text-slate-400">No scores yet today. Be the first!</p>
+        <p className="text-slate-400">No one has played today's challenge yet. Be the first!</p>
       </div>
     );
   }
 
   return (
     <div className="px-4 pt-6 pb-24 max-w-md mx-auto">
-      <h2 className="text-xl font-bold mb-4 text-center">Today's Leaderboard</h2>
+      <h2 className="text-xl font-bold mb-1 text-center">Daily Challenge</h2>
+      <p className="text-slate-400 text-sm mb-4 text-center">Today's leaderboard</p>
 
       <div className="space-y-2">
         {data.scores.map((entry, i) => (

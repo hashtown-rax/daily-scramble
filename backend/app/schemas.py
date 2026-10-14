@@ -40,6 +40,7 @@ class PuzzleWord(BaseModel):
 
 class PuzzleOut(BaseModel):
     id: int
+    is_daily: bool
     words: list[PuzzleWord]
 
 

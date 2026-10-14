@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { submitScore } from '../api';
 
-export default function Results({ puzzle, wordScores, guesses, timeTaken, userId, onPlayAgain }) {
+export default function Results({ puzzle, wordScores, guesses, timeTaken, userId, mode, onPlayAgain, onBack }) {
   const [serverData, setServerData] = useState(null);
   const [error, setError] = useState(null);
   const [submitted, setSubmitted] = useState(false);
@@ -23,7 +23,13 @@ export default function Results({ puzzle, wordScores, guesses, timeTaken, userId
         setSubmitted(true);
         setServerData(res);
       })
-      .catch((err) => setError(err.message));
+      .catch((err) => {
+        if (err.message === "Already completed today's challenge") {
+          setSubmitted(true);
+        } else {
+          setError(err.message);
+        }
+      });
   }, []);
 
   const multiplier = serverData?.multiplier || 1;
@@ -82,12 +88,22 @@ export default function Results({ puzzle, wordScores, guesses, timeTaken, userId
 
       {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
 
-      <button
-        onClick={onPlayAgain}
-        className="w-full max-w-xs py-3 rounded-lg bg-amber-500 text-slate-900 font-semibold active:bg-amber-600"
-      >
-        Play again
-      </button>
+      <div className="w-full max-w-xs space-y-2">
+        {onPlayAgain && (
+          <button
+            onClick={onPlayAgain}
+            className="w-full py-3 rounded-lg bg-amber-500 text-slate-900 font-semibold active:bg-amber-600"
+          >
+            Play again
+          </button>
+        )}
+        <button
+          onClick={onBack}
+          className="w-full py-3 rounded-lg bg-slate-800 text-slate-300 font-semibold active:bg-slate-700"
+        >
+          {mode === 'daily' ? 'View leaderboard' : 'Back to menu'}
+        </button>
+      </div>
     </div>
   );
 }

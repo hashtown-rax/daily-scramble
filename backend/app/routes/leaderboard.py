@@ -1,10 +1,10 @@
-from datetime import date, datetime
+from datetime import date
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, func, cast, Date
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import Score, User
+from app.models import Score, User, Puzzle
 from app.schemas import ScoreOut, LeaderboardOut
 
 router = APIRouter(prefix="/api/leaderboard", tags=["leaderboard"])
@@ -14,37 +14,24 @@ router = APIRouter(prefix="/api/leaderboard", tags=["leaderboard"])
 async def get_leaderboard(db: AsyncSession = Depends(get_db)):
     today = date.today()
 
-    # best score per user today
-    subq = (
-        select(
-            Score.user_id,
-            func.max(Score.points).label("best_points"),
-        )
-        .where(cast(Score.completed_at, Date) == today)
-        .group_by(Score.user_id)
-        .subquery()
-    )
-
+    # only scores from today's daily puzzle
     result = await db.execute(
         select(Score, User.display_name)
         .join(User, Score.user_id == User.id)
-        .join(subq, (Score.user_id == subq.c.user_id) & (Score.points == subq.c.best_points))
-        .where(cast(Score.completed_at, Date) == today)
+        .join(Puzzle, Score.puzzle_id == Puzzle.id)
+        .where(Puzzle.is_daily == True, Puzzle.date == today)
         .order_by(Score.points.desc(), Score.time_seconds.asc())
         .limit(20)
     )
 
-    seen = set()
-    scores = []
-    for score, name in result.all():
-        if score.user_id in seen:
-            continue
-        seen.add(score.user_id)
-        scores.append(ScoreOut(
+    scores = [
+        ScoreOut(
             display_name=name,
             points=score.points,
             time_seconds=score.time_seconds,
             words_solved=score.words_solved,
-        ))
+        )
+        for score, name in result.all()
+    ]
 
     return LeaderboardOut(date=today, scores=scores)

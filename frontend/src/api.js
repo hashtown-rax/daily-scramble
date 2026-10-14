@@ -27,6 +27,14 @@ export function getNewPuzzle() {
   return request('/api/puzzle/new');
 }
 
+export function getDailyPuzzle() {
+  return request('/api/puzzle/daily');
+}
+
+export function getDailyStatus(userId) {
+  return request(`/api/scores/daily-status/${userId}`);
+}
+
 export function submitScore(data) {
   return request('/api/scores', {
     method: 'POST',

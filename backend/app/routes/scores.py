@@ -1,3 +1,4 @@
+from uuid import UUID
 from datetime import date, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, func, cast, Date
@@ -64,6 +65,18 @@ async def get_current_streak(user_id, db):
     return streak
 
 
+@router.get("/daily-status/{user_id}")
+async def daily_status(user_id: UUID, db: AsyncSession = Depends(get_db)):
+    today = date.today()
+    result = await db.execute(
+        select(Score)
+        .join(Puzzle, Score.puzzle_id == Puzzle.id)
+        .where(Score.user_id == user_id, Puzzle.is_daily == True, Puzzle.date == today)
+    )
+    done = result.scalar_one_or_none() is not None
+    return {"done": done}
+
+
 @router.post("")
 async def submit_score(body: SubmitScore, db: AsyncSession = Depends(get_db)):
     user = await db.get(User, body.user_id)
@@ -73,6 +86,17 @@ async def submit_score(body: SubmitScore, db: AsyncSession = Depends(get_db)):
     puzzle = await db.get(Puzzle, body.puzzle_id)
     if not puzzle:
         raise HTTPException(status_code=404, detail="Puzzle not found")
+
+    # daily puzzles: one attempt per user
+    if puzzle.is_daily:
+        existing = await db.execute(
+            select(Score).where(
+                Score.user_id == body.user_id,
+                Score.puzzle_id == body.puzzle_id,
+            )
+        )
+        if existing.scalar_one_or_none():
+            raise HTTPException(status_code=409, detail="Already completed today's challenge")
 
     base_points, words_solved = compute_score(body.guesses, puzzle.words, body.time_seconds)
 

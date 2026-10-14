@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { getUserStats } from './api';
+import { getUserStats, getDailyStatus } from './api';
 import Onboarding from './components/Onboarding';
+import PlayMenu from './components/PlayMenu';
 import Game from './components/Game';
 import Leaderboard from './components/Leaderboard';
 import Stats from './components/Stats';
@@ -10,8 +11,9 @@ export default function App() {
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('play');
+  const [gameMode, setGameMode] = useState(null); // null = menu, 'daily' | 'practice'
+  const [dailyDone, setDailyDone] = useState(false);
 
-  // on mount, check if stored user still exists
   useEffect(() => {
     const stored = localStorage.getItem('user_id');
     if (!stored) {
@@ -19,14 +21,32 @@ export default function App() {
       return;
     }
     getUserStats(stored)
-      .then(() => setUserId(stored))
+      .then(() => {
+        setUserId(stored);
+        return getDailyStatus(stored);
+      })
+      .then((res) => setDailyDone(res.done))
       .catch(() => {
-        // user doesn't exist anymore, clear stale data
         localStorage.removeItem('user_id');
         localStorage.removeItem('display_name');
       })
       .finally(() => setLoading(false));
   }, []);
+
+  function handleBackFromGame() {
+    setGameMode(null);
+    // refresh daily status
+    if (userId) {
+      getDailyStatus(userId).then((res) => setDailyDone(res.done)).catch(() => {});
+    }
+    setTab('play');
+  }
+
+  function handleDailyDone() {
+    setGameMode(null);
+    setDailyDone(true);
+    setTab('leaderboard');
+  }
 
   if (loading) {
     return (
@@ -46,10 +66,22 @@ export default function App() {
 
   return (
     <div className="min-h-screen pb-20">
-      {tab === 'play' && <Game userId={userId} />}
+      {tab === 'play' && !gameMode && (
+        <PlayMenu
+          dailyDone={dailyDone}
+          onSelect={(mode) => setGameMode(mode)}
+        />
+      )}
+      {tab === 'play' && gameMode && (
+        <Game
+          userId={userId}
+          mode={gameMode}
+          onBack={gameMode === 'daily' ? handleDailyDone : handleBackFromGame}
+        />
+      )}
       {tab === 'leaderboard' && <Leaderboard />}
       {tab === 'stats' && <Stats userId={userId} />}
-      <Navbar active={tab} onChange={setTab} />
+      <Navbar active={tab} onChange={(t) => { setTab(t); setGameMode(null); }} />
     </div>
   );
 }

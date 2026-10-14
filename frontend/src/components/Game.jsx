@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { getNewPuzzle } from '../api';
+import { getNewPuzzle, getDailyPuzzle } from '../api';
 import Results from './Results';
 
-export default function Game({ userId }) {
+export default function Game({ userId, mode, onBack }) {
   const [puzzle, setPuzzle] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [guess, setGuess] = useState('');
@@ -28,7 +28,8 @@ export default function Game({ userId }) {
     setDone(false);
     setError(null);
 
-    getNewPuzzle()
+    const fetchPuzzle = mode === 'daily' ? getDailyPuzzle : getNewPuzzle;
+    fetchPuzzle()
       .then((p) => {
         setPuzzle(p);
         setStartTime(Date.now());
@@ -53,7 +54,8 @@ export default function Game({ userId }) {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
-        <p className="text-red-400">{error}</p>
+        <p className="text-red-400 mb-4">{error}</p>
+        <button onClick={onBack} className="text-amber-500 text-sm">Back</button>
       </div>
     );
   }
@@ -76,7 +78,9 @@ export default function Game({ userId }) {
         guesses={guesses}
         timeTaken={totalTime}
         userId={userId}
-        onPlayAgain={loadPuzzle}
+        mode={mode}
+        onPlayAgain={mode === 'practice' ? loadPuzzle : null}
+        onBack={onBack}
       />
     );
   }
@@ -133,6 +137,9 @@ export default function Game({ userId }) {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+      <div className="text-xs text-amber-500 mb-1 uppercase tracking-wide">
+        {mode === 'daily' ? "Daily Challenge" : "Practice"}
+      </div>
       <div className="text-slate-500 text-sm mb-2">
         Word {currentIndex + 1} of {puzzle.words.length}
       </div>
