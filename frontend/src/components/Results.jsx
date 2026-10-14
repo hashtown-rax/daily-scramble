@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import { submitScore } from '../api';
 
 export default function Results({ puzzle, wordScores, guesses, timeTaken, userId }) {
-  const [serverPoints, setServerPoints] = useState(null);
+  const [serverData, setServerData] = useState(null);
   const [error, setError] = useState(null);
   const [submitted, setSubmitted] = useState(false);
 
   const wordsSolved = wordScores.filter((s) => s > 0).length;
   const wordPoints = wordScores.reduce((a, b) => a + b, 0);
   const timeBonus = Math.max(0, Math.floor(300 - timeTaken));
-  const totalPoints = serverPoints ?? (wordPoints + timeBonus);
 
   useEffect(() => {
     if (submitted) return;
@@ -22,7 +21,7 @@ export default function Results({ puzzle, wordScores, guesses, timeTaken, userId
     })
       .then((res) => {
         setSubmitted(true);
-        setServerPoints(res.points);
+        setServerData(res);
         localStorage.setItem(`played_${puzzle.date}`, 'true');
       })
       .catch((err) => {
@@ -53,6 +52,10 @@ export default function Results({ puzzle, wordScores, guesses, timeTaken, userId
     return () => clearInterval(id);
   }, []);
 
+  const multiplier = serverData?.multiplier || 1;
+  const totalCoins = serverData?.coins || (wordPoints + timeBonus);
+  const streak = serverData?.streak || 0;
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
       <h2 className="text-2xl font-bold mb-1">Nice work!</h2>
@@ -60,24 +63,41 @@ export default function Results({ puzzle, wordScores, guesses, timeTaken, userId
         {wordsSolved} of {puzzle.words.length} words solved
       </p>
 
-      <div className="bg-slate-800 rounded-xl p-6 w-full max-w-xs mb-6">
-        <div className="text-4xl font-bold text-amber-500 mb-4">{totalPoints}</div>
+      {/* coins earned */}
+      <div className="bg-slate-800 rounded-xl p-6 w-full max-w-xs mb-4">
+        <div className="text-sm text-slate-400 mb-1">Coins earned</div>
+        <div className="text-4xl font-bold text-amber-500 mb-4">{totalCoins}</div>
         <div className="text-sm text-slate-400 space-y-1">
           <div className="flex justify-between">
             <span>Words</span>
-            <span className="text-white">{wordPoints} pts</span>
+            <span className="text-white">{wordPoints}</span>
           </div>
           <div className="flex justify-between">
             <span>Time bonus</span>
-            <span className="text-white">{timeBonus} pts</span>
+            <span className="text-white">+{timeBonus}</span>
           </div>
-          <div className="flex justify-between">
+          {multiplier > 1 && (
+            <div className="flex justify-between text-amber-400">
+              <span>Streak bonus ({streak} days)</span>
+              <span>{multiplier}x</span>
+            </div>
+          )}
+          <div className="flex justify-between border-t border-slate-700 pt-1 mt-1">
             <span>Time</span>
             <span className="text-white">{timeTaken.toFixed(1)}s</span>
           </div>
         </div>
       </div>
 
+      {/* streak info */}
+      {streak > 0 && (
+        <div className="bg-slate-800 rounded-lg px-4 py-3 w-full max-w-xs mb-4 flex items-center justify-between">
+          <span className="text-sm text-slate-400">Current streak</span>
+          <span className="text-lg font-bold text-orange-400">{streak} day{streak !== 1 ? 's' : ''} 🔥</span>
+        </div>
+      )}
+
+      {/* word breakdown */}
       <div className="w-full max-w-xs space-y-2 mb-6">
         {puzzle.words.map((word, i) => (
           <div key={i} className="flex justify-between text-sm">

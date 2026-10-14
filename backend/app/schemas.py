@@ -13,15 +13,24 @@ class UserOut(BaseModel):
     created_at: datetime
 
 
+class Badge(BaseModel):
+    id: str
+    name: str
+    description: str
+    earned: bool
+
+
 class UserStats(BaseModel):
     display_name: str
     total_points: int
+    total_coins: int
     games_played: int
     current_streak: int
     longest_streak: int
     best_score: int
     level: int
     level_name: str
+    badges: list[Badge]
 
 
 class PuzzleWord(BaseModel):
