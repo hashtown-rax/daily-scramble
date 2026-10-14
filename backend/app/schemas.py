@@ -40,7 +40,6 @@ class PuzzleWord(BaseModel):
 
 class PuzzleOut(BaseModel):
     id: int
-    date: date
     words: list[PuzzleWord]
 
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { submitScore } from '../api';
 
-export default function Results({ puzzle, wordScores, guesses, timeTaken, userId }) {
+export default function Results({ puzzle, wordScores, guesses, timeTaken, userId, onPlayAgain }) {
   const [serverData, setServerData] = useState(null);
   const [error, setError] = useState(null);
   const [submitted, setSubmitted] = useState(false);
@@ -22,34 +22,8 @@ export default function Results({ puzzle, wordScores, guesses, timeTaken, userId
       .then((res) => {
         setSubmitted(true);
         setServerData(res);
-        localStorage.setItem(`played_${puzzle.date}`, 'true');
       })
-      .catch((err) => {
-        if (err.message === 'Already submitted for today') {
-          setSubmitted(true);
-          localStorage.setItem(`played_${puzzle.date}`, 'true');
-        } else {
-          setError(err.message);
-        }
-      });
-  }, []);
-
-  const [countdown, setCountdown] = useState('');
-  useEffect(() => {
-    function update() {
-      const now = new Date();
-      const tomorrow = new Date(now);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(0, 0, 0, 0);
-      const diff = tomorrow - now;
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setCountdown(`${h}h ${m}m ${s}s`);
-    }
-    update();
-    const id = setInterval(update, 1000);
-    return () => clearInterval(id);
+      .catch((err) => setError(err.message));
   }, []);
 
   const multiplier = serverData?.multiplier || 1;
@@ -63,7 +37,6 @@ export default function Results({ puzzle, wordScores, guesses, timeTaken, userId
         {wordsSolved} of {puzzle.words.length} words solved
       </p>
 
-      {/* coins earned */}
       <div className="bg-slate-800 rounded-xl p-6 w-full max-w-xs mb-4">
         <div className="text-sm text-slate-400 mb-1">Coins earned</div>
         <div className="text-4xl font-bold text-amber-500 mb-4">{totalCoins}</div>
@@ -89,7 +62,6 @@ export default function Results({ puzzle, wordScores, guesses, timeTaken, userId
         </div>
       </div>
 
-      {/* streak info */}
       {streak > 0 && (
         <div className="bg-slate-800 rounded-lg px-4 py-3 w-full max-w-xs mb-4 flex items-center justify-between">
           <span className="text-sm text-slate-400">Current streak</span>
@@ -97,7 +69,6 @@ export default function Results({ puzzle, wordScores, guesses, timeTaken, userId
         </div>
       )}
 
-      {/* word breakdown */}
       <div className="w-full max-w-xs space-y-2 mb-6">
         {puzzle.words.map((word, i) => (
           <div key={i} className="flex justify-between text-sm">
@@ -111,9 +82,12 @@ export default function Results({ puzzle, wordScores, guesses, timeTaken, userId
 
       {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
 
-      <div className="text-slate-500 text-sm">
-        Next puzzle in <span className="text-white">{countdown}</span>
-      </div>
+      <button
+        onClick={onPlayAgain}
+        className="w-full max-w-xs py-3 rounded-lg bg-amber-500 text-slate-900 font-semibold active:bg-amber-600"
+      >
+        Play again
+      </button>
     </div>
   );
 }

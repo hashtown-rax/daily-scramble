@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, func, cast, Date
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -37,11 +37,11 @@ def compute_score(guesses, puzzle_words, time_seconds):
 
 
 async def get_current_streak(user_id, db):
+    # get distinct dates the user played, ordered desc
     result = await db.execute(
-        select(Puzzle.date)
-        .join(Score, Score.puzzle_id == Puzzle.id)
+        select(func.distinct(cast(Score.completed_at, Date)))
         .where(Score.user_id == user_id)
-        .order_by(Puzzle.date.desc())
+        .order_by(cast(Score.completed_at, Date).desc())
     )
     played_dates = [row[0] for row in result.all()]
 
@@ -49,13 +49,15 @@ async def get_current_streak(user_id, db):
         return 0
 
     streak = 0
-    # today's score hasn't been committed yet, so check from yesterday
-    expected = date.today() - timedelta(days=1)
+    expected = date.today()
     for d in played_dates:
-        if d == date.today():
-            continue
         if d == expected:
             streak += 1
+            expected -= timedelta(days=1)
+        elif d == expected + timedelta(days=1) and streak == 0:
+            # today not played yet, start from yesterday
+            expected = d
+            streak = 1
             expected -= timedelta(days=1)
         else:
             break
@@ -72,23 +74,13 @@ async def submit_score(body: SubmitScore, db: AsyncSession = Depends(get_db)):
     if not puzzle:
         raise HTTPException(status_code=404, detail="Puzzle not found")
 
-    existing = await db.execute(
-        select(Score).where(
-            Score.user_id == body.user_id,
-            Score.puzzle_id == body.puzzle_id,
-        )
-    )
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=409, detail="Already submitted for today")
-
     base_points, words_solved = compute_score(body.guesses, puzzle.words, body.time_seconds)
 
-    # streak multiplier (based on streak before today)
     streak = await get_current_streak(body.user_id, db)
-    streak_with_today = streak + 1
+    streak_with_today = max(streak, 1)
     multiplier = get_streak_multiplier(streak_with_today)
     points = int(base_points * multiplier)
-    coins = points  # 1 point = 1 coin
+    coins = points
 
     score = Score(
         user_id=body.user_id,

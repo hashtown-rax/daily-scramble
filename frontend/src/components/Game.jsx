@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { getTodayPuzzle } from '../api';
+import { getNewPuzzle } from '../api';
 import Results from './Results';
 
 export default function Game({ userId }) {
@@ -14,21 +14,29 @@ export default function Game({ userId }) {
   const [elapsed, setElapsed] = useState(0);
   const [done, setDone] = useState(false);
   const [error, setError] = useState(null);
-  const [alreadyPlayed, setAlreadyPlayed] = useState(false);
   const inputRef = useRef(null);
 
-  useEffect(() => {
-    getTodayPuzzle()
+  function loadPuzzle() {
+    setPuzzle(null);
+    setCurrentIndex(0);
+    setGuess('');
+    setAttempts(0);
+    setWordScores([]);
+    setGuesses([]);
+    setFeedback(null);
+    setElapsed(0);
+    setDone(false);
+    setError(null);
+
+    getNewPuzzle()
       .then((p) => {
         setPuzzle(p);
-        if (localStorage.getItem(`played_${p.date}`)) {
-          setAlreadyPlayed(true);
-        } else {
-          setStartTime(Date.now());
-        }
+        setStartTime(Date.now());
       })
       .catch((err) => setError(err.message));
-  }, []);
+  }
+
+  useEffect(() => { loadPuzzle(); }, []);
 
   useEffect(() => {
     if (!startTime || done) return;
@@ -53,13 +61,9 @@ export default function Game({ userId }) {
   if (!puzzle) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-slate-400">Loading today's puzzle...</p>
+        <p className="text-slate-400">Loading puzzle...</p>
       </div>
     );
-  }
-
-  if (alreadyPlayed) {
-    return <AlreadyPlayed />;
   }
 
   if (done) {
@@ -72,6 +76,7 @@ export default function Game({ userId }) {
         guesses={guesses}
         timeTaken={totalTime}
         userId={userId}
+        onPlayAgain={loadPuzzle}
       />
     );
   }
@@ -197,37 +202,6 @@ export default function Game({ userId }) {
             }`}
           />
         ))}
-      </div>
-    </div>
-  );
-}
-
-function AlreadyPlayed() {
-  const [countdown, setCountdown] = useState('');
-
-  useEffect(() => {
-    function update() {
-      const now = new Date();
-      const tomorrow = new Date(now);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(0, 0, 0, 0);
-      const diff = tomorrow - now;
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setCountdown(`${h}h ${m}m ${s}s`);
-    }
-    update();
-    const id = setInterval(update, 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
-      <h2 className="text-2xl font-bold mb-2">You already played today!</h2>
-      <p className="text-slate-400 mb-4">Check the leaderboard or your stats.</p>
-      <div className="text-slate-500 text-sm">
-        Next puzzle in <span className="text-white">{countdown}</span>
       </div>
     </div>
   );

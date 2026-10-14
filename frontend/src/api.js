@@ -23,8 +23,8 @@ export function getUserStats(userId) {
   return request(`/api/users/${userId}/stats`);
 }
 
-export function getTodayPuzzle() {
-  return request('/api/puzzle/today');
+export function getNewPuzzle() {
+  return request('/api/puzzle/new');
 }
 
 export function submitScore(data) {

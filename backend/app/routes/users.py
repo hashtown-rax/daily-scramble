@@ -1,11 +1,11 @@
 from uuid import UUID
 from datetime import date, timedelta
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, func
+from sqlalchemy import select, func, cast, Date
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import User, Score, Puzzle
+from app.models import User, Score
 from app.schemas import CreateUser, UserOut, UserStats, Badge
 
 router = APIRouter(prefix="/api/users", tags=["users"])
@@ -97,12 +97,11 @@ async def get_user_stats(user_id: UUID, db: AsyncSession = Depends(get_db)):
     )
     total_points, games_played, best_score, fastest_time = result.one()
 
-    # streak calc
+    # streak calc — distinct dates played
     result = await db.execute(
-        select(Puzzle.date)
-        .join(Score, Score.puzzle_id == Puzzle.id)
+        select(func.distinct(cast(Score.completed_at, Date)))
         .where(Score.user_id == user_id)
-        .order_by(Puzzle.date.desc())
+        .order_by(cast(Score.completed_at, Date).desc())
     )
     played_dates = [row[0] for row in result.all()]
 
